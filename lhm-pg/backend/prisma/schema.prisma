@@ -1,0 +1,307 @@
+// ============================================================
+// SCHÉMA PRISMA - LHM Madagascar
+// Base de données: PostgreSQL
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// UTILISATEURS & AUTH
+// ============================================================
+model User {
+  id                  String    @id @default(uuid())
+  matricule           String    @unique
+  nom                 String
+  prenom              String
+  email               String    @unique
+  password            String
+  role                Role      @default(utilisateur)
+  service             String?
+  poste               String?
+  actif               Boolean   @default(true)
+  bloque              Boolean   @default(false)
+  tentatives_connexion Int      @default(0)
+  derniere_connexion  DateTime?
+  password_changed_at DateTime  @default(now())
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  // Relations
+  personnel           Personnel?
+  absences_demandees  Absence[] @relation("AbsenceDemandeur")
+  absences_validees   Absence[] @relation("AbsenceValideur")
+  projets_responsable Projet[]
+  mouvements_valides  MouvementStock[]
+  audit_logs          AuditLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  super_admin
+  direction
+  assistant_admin
+  responsable_stock
+  responsable_volontaires
+  coordinateur
+  utilisateur
+}
+
+// ============================================================
+// MODULE 1 - PERSONNEL
+// ============================================================
+model Personnel {
+  id                    String    @id @default(uuid())
+  user_id               String?   @unique
+  matricule             String    @unique
+  nom                   String
+  prenom                String
+  nom_jeune_fille       String?
+  date_naissance        DateTime?
+  lieu_naissance        String?
+  adresse               String?
+  telephone             String?
+  email                 String?
+  situation_familiale   String?
+  contact_urgence_nom   String?
+  contact_urgence_tel   String?
+  poste                 String
+  service               String
+  superieur_id          String?
+  type_contrat          TypeContrat @default(CDI)
+  date_entree           DateTime?
+  salaire               Float?
+  rib                   String?
+  objectifs_annuels     String?
+  competences           String[]
+  langues               Json?     // [{langue, niveau}]
+  formations            String[]
+  certifications        String[]
+  experiences           String?
+  cnaps                 String?
+  aro                   String?
+  document_ostie        String?
+  attestation_medicale  String?
+  statut                StatutPersonnel @default(actif)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  // Relations
+  user                  User?     @relation(fields: [user_id], references: [id])
+  absences              Absence[]
+
+  @@map("personnel")
+}
+
+enum TypeContrat {
+  CDI
+  CDD
+  Benevole
+  Stage
+  Autre
+}
+
+enum StatutPersonnel {
+  actif
+  inactif
+  suspendu
+}
+
+// ============================================================
+// ABSENCES & CONGÉS
+// ============================================================
+model Absence {
+  id            String        @id @default(uuid())
+  personnel_id  String
+  type          TypeAbsence
+  date_debut    DateTime
+  date_fin      DateTime
+  motif         String?
+  statut        StatutAbsence @default(en_attente)
+  demandeur_id  String?
+  valideur_id   String?
+  commentaire   String?
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+
+  personnel     Personnel     @relation(fields: [personnel_id], references: [id])
+  demandeur     User?         @relation("AbsenceDemandeur", fields: [demandeur_id], references: [id])
+  valideur      User?         @relation("AbsenceValideur", fields: [valideur_id], references: [id])
+
+  @@map("absences")
+}
+
+enum TypeAbsence {
+  Conge_annuel
+  Conge_maladie
+  Conge_maternite_paternite
+  Conge_sans_solde
+  Permission_speciale
+}
+
+enum StatutAbsence {
+  en_attente
+  approuve
+  refuse
+}
+
+// ============================================================
+// MODULE 2 - VOLONTAIRES
+// ============================================================
+model Volontaire {
+  id              String          @id @default(uuid())
+  nom             String
+  prenom          String
+  email           String?
+  telephone       String?
+  date_naissance  DateTime?
+  motivation      String?
+  competences     String[]
+  disponibilites  Json?           // {jours, periodes, type}
+  preferences     String?
+  restrictions    String?
+  statut          String          @default("actif")
+  statut_workflow WorkflowStep    @default(enregistre)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  affectations    Affectation[]
+
+  @@map("volontaires")
+}
+
+enum WorkflowStep {
+  enregistre
+  valide
+  affecte
+  participe
+  evalue
+  reconnu
+}
+
+model Affectation {
+  id              String      @id @default(uuid())
+  volontaire_id   String
+  activite        String
+  date_debut      DateTime
+  date_fin        DateTime?
+  notes           String?
+  created_at      DateTime    @default(now())
+
+  volontaire      Volontaire  @relation(fields: [volontaire_id], references: [id])
+
+  @@map("affectations")
+}
+
+// ============================================================
+// MODULE 3 - STOCK
+// ============================================================
+model Article {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  designation     String
+  categorie       String
+  sous_categorie  String?
+  unite           String    @default("Pièce")
+  prix_unitaire   Float     @default(0)
+  fournisseur     String?
+  emplacement     String?
+  quantite        Float     @default(0)
+  seuil_min       Float     @default(5)
+  seuil_securite  Float     @default(10)
+  seuil_optimal   Float     @default(20)
+  date_peremption DateTime?
+  photo_url       String?
+  caracteristiques String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  mouvements      MouvementStock[]
+
+  @@map("articles")
+}
+
+model MouvementStock {
+  id              String          @id @default(uuid())
+  article_id      String
+  type            TypeMouvement
+  quantite        Float
+  quantite_avant  Float
+  quantite_apres  Float
+  prix_unitaire   Float?
+  fournisseur     String?
+  numero_facture  String?
+  destinataire    String?
+  motif           String?
+  date_peremption DateTime?
+  valideur_id     String?
+  date            DateTime        @default(now())
+
+  article         Article         @relation(fields: [article_id], references: [id])
+  valideur        User?           @relation(fields: [valideur_id], references: [id])
+
+  @@map("mouvements_stock")
+}
+
+enum TypeMouvement {
+  entree
+  sortie
+  transfert
+  inventaire
+}
+
+// ============================================================
+// MODULE 4 - PROJETS
+// ============================================================
+model Projet {
+  id              String        @id @default(uuid())
+  nom             String
+  description     String?
+  responsable_id  String?
+  date_debut      DateTime?
+  date_fin_prevue DateTime?
+  date_fin_reelle DateTime?
+  budget          Float         @default(0)
+  budget_consomme Float         @default(0)
+  statut          StatutProjet  @default(planifie)
+  avancement      Int           @default(0)
+  risques         String[]
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  responsable     User?         @relation(fields: [responsable_id], references: [id])
+
+  @@map("projets")
+}
+
+enum StatutProjet {
+  planifie
+  en_cours
+  termine
+  suspendu
+}
+
+// ============================================================
+// MODULE 5 - AUDIT
+// ============================================================
+model AuditLog {
+  id              String    @id @default(uuid())
+  utilisateur_id  String?
+  action          String
+  objet           String?
+  ancienne_valeur Json?
+  nouvelle_valeur Json?
+  ip              String?
+  date            DateTime  @default(now())
+
+  utilisateur     User?     @relation(fields: [utilisateur_id], references: [id])
+
+  @@map("audit_logs")
+}

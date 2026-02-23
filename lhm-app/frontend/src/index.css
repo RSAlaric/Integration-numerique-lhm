@@ -1,0 +1,148 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #0f2044;
+  --navy-light: #1a3560;
+  --navy-dark: #091628;
+  --gold: #c9a84c;
+  --gold-light: #e8c96a;
+  --gold-dark: #a07830;
+  --emerald: #1a7a4a;
+  --emerald-light: #22a060;
+  --red: #c0392b;
+  --orange: #e67e22;
+  --blue-accent: #2980b9;
+  --white: #ffffff;
+  --off-white: #f8f7f4;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --sidebar-w: 260px;
+  --header-h: 64px;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(15, 32, 68, 0.08);
+  --shadow-lg: 0 8px 40px rgba(15, 32, 68, 0.15);
+}
+
+html { font-size: 16px; }
+body { font-family: 'DM Sans', sans-serif; background: var(--off-white); color: var(--navy); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--gray-100); }
+::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 3px; }
+
+/* Utilitaires */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+/* Transitions */
+* { transition: color 0.15s, background-color 0.15s, border-color 0.15s, box-shadow 0.15s; }
+
+/* Forms */
+input, select, textarea {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: 100%;
+  outline: none;
+  background: white;
+  color: var(--navy);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+}
+
+label { font-size: 0.82rem; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+
+button { font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; outline: none; }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.animate-fade { animation: fadeIn 0.3s ease; }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* ============================================================
+   RESPONSIVE GLOBAL
+   ============================================================ */
+* { box-sizing: border-box; }
+
+img { max-width: 100%; }
+
+/* Tableaux scrollables sur mobile */
+.table-wrapper, [style*="overflow"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Cartes responsives */
+@media (max-width: 768px) {
+  .card, [class*="card"] {
+    border-radius: 10px !important;
+  }
+  /* Grilles 2 colonnes -> 1 colonne */
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* Flex wrap forcé */
+  .flex-mobile-wrap {
+    flex-wrap: wrap !important;
+  }
+  /* KPIs full width */
+  [style*="display: grid"] {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  }
+  /* Form rows -> 1 col */
+  [style*="display: flex"][style*="gap"] > div {
+    min-width: 100% !important;
+  }
+  /* Boutons taille lisible */
+  button, .btn {
+    min-height: 38px;
+  }
+  /* Typography adaptatifs */
+  h1 { font-size: clamp(1.2rem, 4vw, 2rem) !important; }
+  h2 { font-size: clamp(1rem, 3.5vw, 1.6rem) !important; }
+}
+
+@media (max-width: 480px) {
+  /* Login page */
+  [style*="width: 460"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  /* Table horizontale */
+  table {
+    font-size: 0.78rem;
+  }
+  td, th {
+    padding: 6px 8px !important;
+  }
+}
+
+/* Topbar responsive */
+@media (max-width: 640px) {
+  .topbar-right .topbar-name {
+    display: none;
+  }
+}
+
+/* ============================================================
+   PRINT GLOBAL
+   ============================================================ */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
